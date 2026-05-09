@@ -273,7 +273,7 @@
 
 <script>
     let signals = [
-        { id: 1, type: 'square', amp: 2, duty: 50, phase: 0, yGrid: 4, color: '#d93025', stroke: 2, isOpen: true }
+        { id: 1, type: 'square', amp: 2, duty: 50, phase: 0, period: 4, yGrid: 4, color: '#d93025', stroke: 2, isOpen: true }
     ];
 
     let gridConfig = { x: 50, y: 40, stroke: 0.5 };
@@ -296,7 +296,7 @@
         signals.forEach(s => s.isOpen = false);
         signals.push({
             id: Date.now(),
-            type: 'square', amp: 1, duty: 50, phase: 0, yGrid: lastY + 5, color: '#188038', stroke: 2, isOpen: true
+            type: 'square', amp: 1, duty: 50, phase: 0, period: 4, yGrid: lastY + 5, color: '#188038', stroke: 2, isOpen: true
         });
         render();
     }
@@ -351,6 +351,10 @@
                         <input type="number" min="0.1" max="6" step="0.1" value="${s.amp}" oninput="updateSig(${s.id}, 'amp', this.value)">
                     </div>
                     <div class="input-group">
+                        <div class="label-row"><span>周期 (格)</span></div>
+                        <input type="number" min="0.5" max="20" step="0.5" value="${s.period}" oninput="updateSig(${s.id}, 'period', this.value)">
+                    </div>
+                    <div class="input-group">
                         <div class="label-row"><span>占空比 (%)</span></div>
                         <input type="number" min="5" max="95" step="5" value="${s.duty}" oninput="updateSig(${s.id}, 'duty', this.value)">
                     </div>
@@ -400,7 +404,7 @@
         signals.forEach((sig, idx) => {
             const baseY = contentMargin + sig.yGrid * GY;
             const ampPx = sig.amp * GY;
-            const periodPx = 4 * GX;
+            const periodPx = sig.period * GX;
             const phaseShift = (sig.phase / 360) * periodPx;
             
             let pts = [];
@@ -412,8 +416,6 @@
                 pts.push(`${x},${y}`);
             }
             
-            // 中线 - 黑色横线
-            svg += `<line x1="${margin}" y1="${baseY}" x2="${W-margin}" y2="${baseY}" stroke="#000000" stroke-width="1" />`;
             // 波形
             svg += `<polyline points="${pts.join(' ')}" fill="none" stroke="${sig.color}" stroke-width="${sig.stroke}" stroke-linecap="round" stroke-linejoin="round" />`;
         });
