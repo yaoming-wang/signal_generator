@@ -61,7 +61,7 @@
             border: 1px solid #cce5ff;
         }
         
-        /* 面板内容：二级滑动（选项内部可滑动） */
+        /* 面板内容：二级滑动 */
         .panel-content { 
             padding: 15px; 
             display: none; 
@@ -228,6 +228,10 @@
                         <input type="number" min="0" max="360" step="1" value="${s.phase}" oninput="updateSig(${s.id}, 'phase', this.value)">
                     </div>
                     <div class="input-group">
+                        <div class="label-row"><span>占空比 (%)</span></div>
+                        <input type="number" min="1" max="99" step="1" value="${s.duty}" oninput="updateSig(${s.id}, 'duty', this.value)">
+                    </div>
+                    <div class="input-group">
                         <div class="label-row"><span>波形线宽 (px)</span></div>
                         <input type="number" min="0.5" step="0.5" value="${s.stroke}" oninput="updateSig(${s.id}, 'stroke', this.value)">
                     </div>
@@ -273,17 +277,26 @@
             const baseY = margin + sig.yOffset * GY;
             const ampPx = sig.amp * GY;
             const periodPx = sig.period * GX;
-            const phaseShift = (sig.phase / 360) * periodPx; // 计算相位导致的位移
+            const phaseShift = (sig.phase / 360) * periodPx; 
+            const d = sig.duty / 100; // 占空比比例
             
             let pts = [];
             for(let x = margin; x <= W - margin; x++) {
-                // 计算带相位的标准化时间参数 t (0-1)
                 let t = ((x - margin + phaseShift) % periodPx) / periodPx;
                 if (t < 0) t += 1;
 
-                let y = (sig.type === 'square') 
-                    ? ((t < 0.5) ? baseY - ampPx : baseY + ampPx) 
-                    : (baseY + ampPx * (1 - 2 * t));
+                let y;
+                if (sig.type === 'square') {
+                    // 方波占空比控制
+                    y = (t < d) ? baseY - ampPx : baseY + ampPx;
+                } else {
+                    // 斜坡占空比控制（上升沿占比）
+                    if (t < d) {
+                        y = baseY + ampPx - (2 * ampPx * (t / d));
+                    } else {
+                        y = baseY - ampPx + (2 * ampPx * ((t - d) / (1 - d)));
+                    }
+                }
                 pts.push(`${x},${y}`);
             }
             svg += `<polyline points="${pts.join(' ')}" fill="none" stroke="${sig.color}" stroke-width="${sig.stroke}" stroke-linejoin="round" stroke-linecap="round" />`;
