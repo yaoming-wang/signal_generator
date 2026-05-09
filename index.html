@@ -88,7 +88,9 @@
         .val-text { color: var(--primary); font-family: monospace; font-weight: bold; }
         input[type="range"] { width: 100%; cursor: pointer; }
         input[type="color"] { border: 1px solid #ccc; width: 45px; height: 22px; cursor: pointer; padding: 0; }
-        select, input[type="number"] { width: 100%; padding: 5px; border: 1px solid var(--border); border-radius: 4px; font-size: 12px; }
+        select, input[type="number"], input[type="checkbox"] { padding: 5px; border: 1px solid var(--border); border-radius: 4px; font-size: 12px; }
+        select, input[type="number"] { width: 100%; }
+        input[type="checkbox"] { width: auto; margin-right: 8px; cursor: pointer; }
         
         .btn-add { background: #107c10; color: white; border:none; padding:10px; border-radius:6px; cursor:pointer; width:100%; font-weight:bold; margin-bottom:8px; transition: 0.2s; flex-shrink: 0; }
         .btn-add:hover { background: #0e6c0e; }
@@ -220,6 +222,31 @@
 <div class="sidebar">
     <h3>信号编辑器</h3>
     
+    <div class="panel global-panel active" id="axisPanel">
+        <div class="panel-header" onclick="toggleAxisPanel()">
+            <span>📐 坐标轴参数</span>
+            <i class="arrow"></i>
+        </div>
+        <div class="panel-content">
+            <div class="input-group flex-row">
+                <label style="display: flex; align-items: center;">
+                    <input type="checkbox" id="showAxis" checked onchange="draw()">
+                    <span>显示XY轴线条</span>
+                </label>
+            </div>
+
+            <div class="input-group">
+                <div class="label-row"><span>XY轴线宽度</span></div>
+                <input type="number" id="axisStroke" min="0.5" max="10" step="0.5" value="2" oninput="draw()">
+            </div>
+
+            <div class="input-group">
+                <div class="label-row"><span>XY轴跨度 (px)</span></div>
+                <input type="number" id="axisBound" min="20" max="200" value="60" oninput="draw()">
+            </div>
+        </div>
+    </div>
+    
     <div class="panel global-panel active" id="bgPanel">
         <div class="panel-header" onclick="toggleBgPanel()">
             <span>⚙️ 背景网格参数</span>
@@ -273,10 +300,16 @@
 
 <script>
     let signals = [
-        { id: 1, type: 'square', amp: 2, duty: 50, phase: 0, period: 4, yGrid: 4, color: '#d93025', stroke: 2, isOpen: true }
+        { id: 1, type: 'square', amp: 1, duty: 50, phase: 180, period: 4, yGrid: 4, color: '#d93025', stroke: 4, isOpen: true }
     ];
 
     let gridConfig = { x: 50, y: 40, stroke: 0.5 };
+
+    // 切换坐标轴面板折叠状态
+    function toggleAxisPanel() {
+        const panel = document.getElementById('axisPanel');
+        panel.classList.toggle('active');
+    }
 
     // 切换背景面板折叠状态
     function toggleBgPanel() {
@@ -296,7 +329,7 @@
         signals.forEach(s => s.isOpen = false);
         signals.push({
             id: Date.now(),
-            type: 'square', amp: 1, duty: 50, phase: 0, period: 4, yGrid: lastY + 5, color: '#188038', stroke: 2, isOpen: true
+            type: 'square', amp: 1, duty: 50, phase: 180, period: 4, yGrid: lastY + 5, color: '#188038', stroke: 4, isOpen: true
         });
         render();
     }
@@ -339,7 +372,7 @@
                         </select>
                     </div>
                     <div class="input-group">
-                        <div class="label-row"><span>垂直位置 (Y)</span></div>
+                        <div class="label-row"><span>垂��位置 (Y)</span></div>
                         <input type="number" min="1" max="40" value="${s.yGrid}" oninput="updateSig(${s.id}, 'yGrid', this.value)">
                     </div>
                     <div class="input-group">
@@ -383,8 +416,12 @@
         const GStroke = gridConfig.stroke;
         const gColor = document.getElementById('gridColor').value;
         const gStyle = document.getElementById('gridStyle').value;
+        
+        const showAxis = document.getElementById('showAxis').checked;
+        const axisStroke = parseFloat(document.getElementById('axisStroke').value);
+        const axisBound = parseInt(document.getElementById('axisBound').value);
 
-        let svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="background:white; border: 1px solid #e0e0e0;">`;
+        let svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="background:white;">`;
         
         const dashAttr = gStyle === "0" ? "" : `stroke-dasharray="${gStyle}"`;
         const contentMargin = 70;
@@ -397,8 +434,16 @@
             svg += `<line x1="${margin}" y1="${y}" x2="${W-margin}" y2="${y}" stroke="${gColor}" stroke-width="${GStroke}" ${dashAttr} />`;
         }
 
-        // 绘制边框
-        svg += `<rect x="${margin}" y="${contentMargin}" width="${W-2*margin}" height="${H-contentMargin-margin}" fill="none" stroke="#999" stroke-width="1" />`;
+        // 绘制XY坐标轴（如果启用）
+        if (showAxis) {
+            // X轴（水平线）- 在画布中间
+            const xAxisY = contentMargin + (H - contentMargin - margin) / 2;
+            svg += `<line x1="${margin}" y1="${xAxisY}" x2="${W-margin}" y2="${xAxisY}" stroke="#000" stroke-width="${axisStroke}" />`;
+            
+            // Y轴（竖直线）- 在画布左侧
+            const yAxisX = margin + axisBound;
+            svg += `<line x1="${yAxisX}" y1="${contentMargin}" x2="${yAxisX}" y2="${H-margin}" stroke="#000" stroke-width="${axisStroke}" />`;
+        }
 
         // 绘制信号波形
         signals.forEach((sig, idx) => {
