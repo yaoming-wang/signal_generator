@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>信号编辑器 - 全折叠交互版</title>
+    <title>信号编辑器</title>
     <style>
         * { box-sizing: border-box; }
         :root { --primary: #0078d4; --bg: #f4f7f9; --border: #dcdfe6; }
@@ -218,7 +218,7 @@
 <body>
 
 <div class="sidebar">
-    <h3>Visio信号生成器</h3>
+    <h3>信号编辑器</h3>
     
     <div class="panel global-panel active" id="bgPanel">
         <div class="panel-header" onclick="toggleBgPanel()">
@@ -227,16 +227,18 @@
         </div>
         <div class="panel-content">
             <div class="input-group">
-                <div class="label-row"><span>X轴跨度 / Y轴高度 (px)</span></div>
-                <div class="flex-row">
-                    <input type="number" id="gridX" value="50" oninput="updateBase()" min="10" max="200">
-                    <input type="number" id="gridY" value="40" oninput="updateBase()" min="10" max="200">
-                </div>
+                <div class="label-row"><span>X轴跨度 (px)</span></div>
+                <input type="number" id="gridX" value="50" oninput="updateBase()" min="10" max="200">
+            </div>
+
+            <div class="input-group">
+                <div class="label-row"><span>Y轴高度 (px)</span></div>
+                <input type="number" id="gridY" value="40" oninput="updateBase()" min="10" max="200">
             </div>
             
             <div class="input-group">
-                <div class="label-row"><span>网格线条宽度</span> <span class="val-text" id="v-gridStroke">0.5</span></div>
-                <input type="range" id="gridStroke" min="0.1" max="3" step="0.1" value="0.5" oninput="updateBase()">
+                <div class="label-row"><span>网格线条宽度</span></div>
+                <input type="number" id="gridStroke" min="0.1" max="3" step="0.1" value="0.5" oninput="updateBase()">
             </div>
 
             <div class="input-group">
@@ -286,7 +288,6 @@
         gridConfig.x = parseInt(document.getElementById('gridX').value) || 50;
         gridConfig.y = parseInt(document.getElementById('gridY').value) || 40;
         gridConfig.stroke = parseFloat(document.getElementById('gridStroke').value);
-        document.getElementById('v-gridStroke').innerText = gridConfig.stroke;
         draw();
     }
 
@@ -310,8 +311,6 @@
         let s = signals.find(x => x.id === id);
         if (!s) return;
         s[key] = (key==='type' || key==='color') ? val : parseFloat(val);
-        const display = document.getElementById(`val-${id}-${key}`);
-        if(display) display.innerText = val;
         draw();
     }
 
@@ -340,24 +339,24 @@
                         </select>
                     </div>
                     <div class="input-group">
-                        <div class="label-row"><span>垂直位置 (Y)</span> <span class="val-text" id="val-${s.id}-yGrid">${s.yGrid}</span></div>
-                        <input type="range" min="1" max="40" value="${s.yGrid}" oninput="updateSig(${s.id}, 'yGrid', this.value)">
+                        <div class="label-row"><span>垂直位置 (Y)</span></div>
+                        <input type="number" min="1" max="40" value="${s.yGrid}" oninput="updateSig(${s.id}, 'yGrid', this.value)">
                     </div>
                     <div class="input-group">
-                        <div class="label-row"><span>波形线宽</span> <span class="val-text" id="val-${s.id}-stroke">${s.stroke}</span></div>
-                        <input type="range" min="0.5" max="10" step="0.5" value="${s.stroke}" oninput="updateSig(${s.id}, 'stroke', this.value)">
+                        <div class="label-row"><span>波形线宽</span></div>
+                        <input type="number" min="0.5" max="10" step="0.5" value="${s.stroke}" oninput="updateSig(${s.id}, 'stroke', this.value)">
                     </div>
                     <div class="input-group">
-                        <div class="label-row"><span>幅值 (格)</span> <span class="val-text" id="val-${s.id}-amp">${s.amp}</span></div>
-                        <input type="range" min="0.1" max="6" step="0.1" value="${s.amp}" oninput="updateSig(${s.id}, 'amp', this.value)">
+                        <div class="label-row"><span>幅值 (格)</span></div>
+                        <input type="number" min="0.1" max="6" step="0.1" value="${s.amp}" oninput="updateSig(${s.id}, 'amp', this.value)">
                     </div>
                     <div class="input-group">
-                        <div class="label-row"><span>占空比 (%)</span> <span class="val-text" id="val-${s.id}-duty">${s.duty}</span></div>
-                        <input type="range" min="5" max="95" step="5" value="${s.duty}" oninput="updateSig(${s.id}, 'duty', this.value)">
+                        <div class="label-row"><span>占空比 (%)</span></div>
+                        <input type="number" min="5" max="95" step="5" value="${s.duty}" oninput="updateSig(${s.id}, 'duty', this.value)">
                     </div>
                     <div class="input-group">
-                        <div class="label-row"><span>相位 (°)</span> <span class="val-text" id="val-${s.id}-phase">${s.phase}</span></div>
-                        <input type="range" min="0" max="360" step="10" value="${s.phase}" oninput="updateSig(${s.id}, 'phase', this.value)">
+                        <div class="label-row"><span>相位 (°)</span></div>
+                        <input type="number" min="0" max="360" step="10" value="${s.phase}" oninput="updateSig(${s.id}, 'phase', this.value)">
                     </div>
                     <div class="input-group flex-row">
                         <span>波形颜色</span>
