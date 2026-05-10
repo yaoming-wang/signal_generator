@@ -2,319 +2,248 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>信号编辑器VISIO版</title>
+    <title>SignalPro-Visio</title>
     <style>
-        * { box-sizing: border-box; }
-        :root { --primary: #0078d4; --bg: #f4f7f9; --border: #dcdfe6; --panel-bg: #ffffff; }
-        body { font-family: "Segoe UI", system-ui, sans-serif; margin: 0; display: flex; height: 100vh; background: var(--bg); color: #333; overflow: hidden; }
-        
-        /* 侧边栏：一级滑动 */
-        .sidebar { 
-            width: 320px; 
-            background: white; 
-            border-right: 1px solid var(--border); 
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            flex-shrink: 0;
+        :root {
+            --accent: #4f46e5; --accent-hover: #4338ca;
+            --bg-page: #f1f5f9; --bg-card: #ffffff;
+            --border: #e2e8f0; --text-main: #1e293b; --text-sub: #64748b;
+            --gray-light: #94a3b8; --radius-main: 16px; --radius-sm: 8px;
+            --success: #10b981;
         }
+        * { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
+        body { margin: 0; display: flex; height: 100vh; background: var(--bg-page); color: var(--text-main); font-family: 'Inter', system-ui, sans-serif; }
 
-        .sidebar-header { padding: 20px 15px 10px; flex-shrink: 0; }
-        h3 { margin: 0; color: var(--primary); border-bottom: 2px solid var(--primary); padding-bottom: 8px; font-size: 18px; }
+        .sidebar { width: 460px; background: #fff; border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; box-shadow: 10px 0 30px rgba(0,0,0,0.02); }
+        .sidebar-header { padding: 32px 24px; border-bottom: 2px solid var(--bg-page); }
+        .sidebar-header h2 { margin: 0; font-size: 22px; font-weight: 800; }
+        .sidebar-scroll { flex: 1; overflow-y: auto; padding: 24px; }
 
-        .sidebar-scroll-area {
-            flex: 1;
-            overflow-y: auto; 
-            padding: 10px 15px 20px;
-        }
+        .module { background: #fff; border: 1px solid var(--border); border-radius: var(--radius-main); margin-bottom: 24px; overflow: hidden; }
+        .module-header { padding: 18px 20px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #fff; user-select: none; }
+        .module-header h3 { margin: 0; font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 14px; }
+        .arrow { width: 8px; height: 8px; border-right: 2px solid var(--gray-light); border-bottom: 2px solid var(--gray-light); transform: rotate(45deg); transition: 0.3s; }
+        .module.collapsed .arrow { transform: rotate(-135deg); }
+        .module.collapsed .module-content { display: none; }
+        .module-content { padding: 24px; border-top: 1px solid var(--border); background: #fafbfc; }
+
+        .label { display: block; font-size: 11px; font-weight: 800; color: var(--text-sub); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+        .input-box { width: 100%; padding: 10px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; outline: none; background: #fff; }
         
-        /* 面板样式 */
-        .panel { 
-            background: var(--panel-bg); 
-            border: 1px solid var(--border); 
-            border-radius: 8px; 
-            margin-bottom: 12px; 
-        }
+        .box-row { display: flex; flex-wrap: wrap; align-items: center; gap: 15px; padding: 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: #f8fafc; margin-bottom: 15px; }
+        .check-item { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
         
-        .panel-header { 
-            padding: 12px; 
-            cursor: pointer; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center;
-            font-weight: 600; 
-            font-size: 13px;
-            user-select: none;
-            background: #fcfcfc;
-        }
-        
-        .panel-header:hover { background: #f0f7ff; }
+        .grid { display: grid; gap: 12px; margin-bottom: 12px; }
+        .grid-2 { grid-template-columns: 1fr 1fr; }
+        .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
 
-        .type-badge {
-            background: #e1f0ff;
-            color: var(--primary);
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-            margin-left: 8px;
-            border: 1px solid #cce5ff;
-        }
-        
-        /* 面板内容：二级滑动 */
-        .panel-content { 
-            padding: 15px; 
-            display: none; 
-            border-top: 1px solid #eee; 
-            max-height: 320px; 
-            overflow-y: auto; 
-        }
-        
-        .panel.active .panel-content { display: block; }
-        .panel.active .panel-header { background: #f0f7ff; color: var(--primary); }
+        .btn-master { background: #fff; border: 1.5px solid var(--accent); color: var(--accent); padding: 12px; border-radius: 10px; width: 100%; font-weight: 700; cursor: pointer; margin-bottom: 24px; }
+        .btn-add { background: var(--accent); color: white; border: none; border-radius: 12px; padding: 18px; font-weight: 700; cursor: pointer; width: 100%; margin-bottom: 12px; transition: 0.2s; }
+        .btn-export { background: var(--success); color: white; border: none; border-radius: 12px; padding: 18px; font-weight: 700; cursor: pointer; width: 100%; margin-bottom: 40px; box-shadow: 0 8px 16px rgba(16, 185, 129, 0.2); }
+        .btn-del { color: #ef4444; background: #fff; border: 1px solid #fee2e2; padding: 10px; border-radius: 8px; width: 100%; font-weight: 700; cursor: pointer; margin-top: 15px; }
 
-        /* 输入控件 */
-        .input-group { margin-bottom: 12px; font-size: 12px; }
-        .label-row { display: flex; justify-content: space-between; margin-bottom: 4px; color: #666; }
-        input[type="number"], select { width: 100%; padding: 6px; border: 1px solid var(--border); border-radius: 4px; outline: none; }
-        input[type="color"] { border: 1px solid #ccc; width: 50px; height: 24px; cursor: pointer; padding: 0; background: none; }
-        .flex-row { display: flex; gap: 10px; align-items: center; justify-content: space-between; }
-        
-        .btn-add { background: #107c10; color: white; border:none; padding:12px; border-radius:6px; cursor:pointer; width:100%; font-weight:bold; margin-bottom: 10px; }
-        .btn-exp { background: var(--primary); color: white; border:none; padding:10px; border-radius:6px; cursor:pointer; width:100%; font-weight:bold; font-size: 12px; }
-        .btn-remove { color:#d93025; background:none; border:none; cursor:pointer; font-size:11px; }
+        .vis-toggle { background: none; border: none; cursor: pointer; padding: 0; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border-radius: 8px; color: var(--accent); }
+        .vis-toggle.hidden { color: var(--gray-light); }
+        .seg-card { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 15px; margin-top: 12px; border-left: 4px solid #cbd5e1; }
 
-        .main { flex-grow: 1; padding: 20px; display: flex; justify-content: center; align-items: center; overflow: auto; }
-        .canvas-wrapper { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
-
-        .arrow { border: solid #999; border-width: 0 2px 2px 0; display: inline-block; padding: 3px; transform: rotate(45deg); transition: 0.3s; }
-        .panel.active .arrow { transform: rotate(-135deg); }
-
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-thumb { background: #ddd; border-radius: 10px; }
+        .main { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px; }
+        .canvas-card { background: white; padding: 30px; border-radius: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.06); border: 1px solid var(--border); }
     </style>
 </head>
 <body>
 
-<div class="sidebar">
-    <div class="sidebar-header">
-        <h3>信号编辑器</h3>
-    </div>
-    
-    <div class="sidebar-scroll-area">
-        <div class="panel active" id="bgPanel">
-            <div class="panel-header" onclick="togglePanel('bgPanel')">
-                <span>⚙️ 背景网格参数</span>
-                <i class="arrow"></i>
-            </div>
-            <div class="panel-content">
-                <div class="input-group flex-row">
-                    <label style="cursor:pointer"><input type="checkbox" id="showHGrid" checked onchange="draw()"> 显示横向网格</label>
+<aside class="sidebar">
+    <div class="sidebar-header"><h2>SignalPro <span style="font-weight: 300; color: var(--text-sub);">| Expert</span></h2></div>
+    <div class="sidebar-scroll">
+        <div class="module" id="mod-global">
+            <div class="module-header" onclick="toggleMod('mod-global')"><h3>背景参数与全局选项</h3><div class="arrow"></div></div>
+            <div class="module-content">
+                <button class="btn-master" onclick="toggleAllWaves()"><span id="masterLabel">一键关闭所有波形</span></button>
+                <span class="label">网格开关</span>
+                <div class="box-row">
+                    <label class="check-item"><input type="checkbox" id="gridH" checked onchange="draw()"> 横向</label>
+                    <label class="check-item"><input type="checkbox" id="gridV" checked onchange="draw()"> 纵向</label>
                 </div>
-                <div class="input-group flex-row">
-                    <label style="cursor:pointer"><input type="checkbox" id="showVGrid" checked onchange="draw()"> 显示纵向网格</label>
+                <div class="box-row"><label class="check-item"><input type="checkbox" id="sumEnable" onchange="render()"> 开启叠加模式</label></div>
+                <div class="grid grid-2">
+                    <div><span class="label">X轴格宽</span><input type="number" id="gX" class="input-box" value="60" oninput="draw()"></div>
+                    <div><span class="label">Y轴格高</span><input type="number" id="gY" class="input-box" value="60" oninput="draw()"></div>
                 </div>
-                <div class="input-group">
-                    <div class="label-row"><span>线条宽度 (px)</span></div>
-                    <input type="number" id="gridStroke" min="0.5" max="10" step="0.5" value="2" oninput="draw()">
-                </div>
-                <div class="input-group">
-                    <div class="label-row"><span>横向跨度 (X)</span></div>
-                    <input type="number" id="gridX" value="50" oninput="draw()" min="10">
-                </div>
-                <div class="input-group">
-                    <div class="label-row"><span>纵向跨度 (Y)</span></div>
-                    <input type="number" id="gridY" value="50" oninput="draw()" min="10">
-                </div>
-                <div class="input-group flex-row">
-                    <span>网格颜色</span>
-                    <input type="color" id="gridColor" value="#444444" onchange="draw()">
-                </div>
-                <div class="input-group">
-                    <div class="label-row"><span>网格样式</span></div>
-                    <select id="gridStyle" onchange="draw()">
-                        <option value="5,5" selected>虚线 (Dashed)</option>
-                        <option value="0">实线 (Solid)</option>
-                        <option value="2,2">点线 (Dotted)</option>
-                    </select>
+                <div class="grid grid-3">
+                    <div><span class="label">颜色</span><input type="color" id="gCol" class="input-box" value="#f1f5f9" onchange="draw()"></div>
+                    <div><span class="label">线宽</span><input type="number" id="gStr" class="input-box" value="1.5" step="0.5" oninput="draw()"></div>
+                    <div><span class="label">线型</span><select id="gSty" class="input-box" onchange="draw()"><option value="solid">实线</option><option value="dashed">虚线</option></select></div>
                 </div>
             </div>
         </div>
 
-        <div id="signalsList"></div>
+        <div id="sumPanelContainer"></div>
+        <div id="channelContainer"></div>
         
-        <button class="btn-add" onclick="addSignal()">+ 添加信号通道</button>
-        <button class="btn-exp" onclick="downloadSVG()">导出 SVG 图像</button>
+        <button class="btn-add" onclick="addChannel()">+ 新建信号通道</button>
+        <button class="btn-export" onclick="exportSVG()">⬇ 导出 SVG 矢量图</button>
     </div>
-</div>
+</aside>
 
-<div class="main">
-    <div class="canvas-wrapper" id="svgContainer"></div>
-</div>
+<main class="main">
+    <div class="canvas-card" id="svgFrame"></div>
+</main>
 
 <script>
-    let signals = [
-        { id: 1, type: 'square', amp: 1, duty: 50, phase: 180, period: 4, yOffset: 2, color: '#0078d4', stroke: 4, isOpen: true }
-    ];
+    let channels = [{
+        id: Date.now(), visible: true, collapsed: false, color: "#4f46e5", stroke: 3, shift: 0, 
+        segments: [{ type: 'ramp', per: 4, yOff: 3, amp: 1.5, duty: 50 }]
+    }];
+    let sumSelection = [];
+    let masterState = true;
 
-    function togglePanel(id) {
-        document.getElementById(id).classList.toggle('active');
+    const iconEyeOpen = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+    const iconEyeClosed = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
+
+    function toggleMod(id) {
+        const el = document.getElementById(id);
+        el.classList.toggle('collapsed');
+        const cId = id.replace('ch-mod-', '');
+        const c = channels.find(x => x.id == cId);
+        if(c) c.collapsed = el.classList.contains('collapsed');
     }
 
-    function addSignal() {
-        signals.forEach(s => s.isOpen = false);
-        signals.push({
-            id: Date.now(),
-            type: 'square', amp: 1, duty: 50, phase: 180, period: 4, yOffset: signals.length * 3 + 2, color: '#188038', stroke: 4, isOpen: true
+    function toggleAllWaves() {
+        masterState = !masterState;
+        channels.forEach(c => c.visible = masterState);
+        document.getElementById('masterLabel').innerText = masterState ? "一键关闭所有波形" : "一键开启所有波形";
+        render();
+    }
+
+    function addChannel() {
+        channels.push({ 
+            id: Date.now(), visible: true, collapsed: false, color: "#f59e0b", stroke: 3, shift: 0,
+            segments: [{ type: 'square', per: 8, yOff: 5, amp: 1, duty: 50 }] 
         });
         render();
     }
 
-    function updateSig(id, key, val) {
-        let s = signals.find(x => x.id === id);
-        if (s) {
-            s[key] = (key==='type' || key==='color') ? val : parseFloat(val);
-            if (key === 'type') {
-                const badge = document.querySelector(`#sig-${id} .type-badge`);
-                if (badge) badge.innerText = val === 'square' ? '方波' : '斜坡';
-            }
-            draw();
+    function setSegmentCount(cIdx, count) {
+        const c = channels[cIdx];
+        const newCount = Math.max(1, parseInt(count) || 1);
+        while(c.segments.length < newCount) {
+            const last = c.segments[c.segments.length - 1];
+            c.segments.push({ ...last });
         }
-    }
-
-    function removeSignal(id) {
-        signals = signals.filter(x => x.id !== id);
+        c.segments = c.segments.slice(0, newCount);
         render();
     }
 
+    // 导出 SVG 的根本逻辑
+    function exportSVG() {
+        const svgData = document.getElementById('svgFrame').innerHTML;
+        const blob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `SignalPro_Export_${Date.now()}.svg`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
     function render() {
-        const list = document.getElementById('signalsList');
-        list.innerHTML = '';
-        signals.forEach((s, i) => {
-            const typeText = s.type === 'square' ? '方波' : '斜坡';
-            const card = document.createElement('div');
-            card.className = `panel ${s.isOpen ? 'active' : ''}`;
-            card.id = `sig-${s.id}`;
-            card.innerHTML = `
-                <div class="panel-header" onclick="togglePanel('sig-${s.id}')">
-                    <div style="display:flex; align-items:center">
-                        <span><strong>#${i+1}</strong> 通道</span>
-                        <span class="type-badge">${typeText}</span>
-                    </div>
-                    <i class="arrow"></i>
+        const sumPanel = document.getElementById('sumPanelContainer');
+        if(document.getElementById('sumEnable').checked) {
+            let chks = channels.map((c, i) => `<label class="check-item"><input type="checkbox" ${sumSelection.includes(c.id)?'checked':''} onchange="((id)=>{ const idx=sumSelection.indexOf(id); if(idx>-1) sumSelection.splice(idx,1); else sumSelection.push(id); draw(); })(${c.id})"> CH${i+1}</label>`).join('');
+            sumPanel.innerHTML = `<div class="module" id="mod-sum"><div class="module-header" onclick="this.parentElement.classList.toggle('collapsed')"><h3>叠加运算配置</h3><div class="arrow"></div></div><div class="module-content"><span class="label">叠加源</span><div class="box-row">${chks}</div><div class="grid grid-3"><div><span class="label">基准Y</span><input type="number" id="sY" class="input-box" value="7" oninput="draw()"></div><div><span class="label">颜色</span><input type="color" id="sCol" class="input-box" value="#ef4444" onchange="draw()"></div><div><span class="label">线宽</span><input type="number" id="sStr" class="input-box" value="4" oninput="draw()"></div></div></div></div>`;
+        } else { sumPanel.innerHTML = ''; }
+
+        const container = document.getElementById('channelContainer');
+        container.innerHTML = '';
+        channels.forEach((c, idx) => {
+            const m = document.createElement('div');
+            m.className = `module ${c.collapsed ? 'collapsed' : ''}`;
+            m.id = `ch-mod-${c.id}`;
+            m.innerHTML = `
+                <div class="module-header" onclick="toggleMod('${m.id}')">
+                    <h3>
+                        <button class="vis-toggle ${c.visible?'':'hidden'}" onclick="event.stopPropagation(); channels[${idx}].visible=!channels[${idx}].visible; render();">
+                            ${c.visible ? iconEyeOpen : iconEyeClosed}
+                        </button>
+                        通道 ${idx+1}
+                    </h3>
+                    <div class="arrow"></div>
                 </div>
-                <div class="panel-content">
-                    <div class="input-group">
-                        <div class="label-row"><span>波形类型</span></div>
-                        <select onchange="updateSig(${s.id}, 'type', this.value)">
-                            <option value="square" ${s.type==='square'?'selected':''}>方波</option>
-                            <option value="ramp" ${s.type==='ramp'?'selected':''}>斜坡</option>
-                        </select>
+                <div class="module-content">
+                    <span class="label">通道全局控制</span>
+                    <div class="grid grid-3">
+                        <div><span class="label">全局颜色</span><input type="color" class="input-box" value="${c.color}" onchange="channels[${idx}].color=this.value; draw();" style="height:38px;padding:2px;"></div>
+                        <div><span class="label">全局线宽</span><input type="number" class="input-box" value="${c.stroke}" oninput="channels[${idx}].stroke=parseFloat(this.value); draw();"></div>
+                        <div><span class="label">全局平移</span><input type="number" class="input-box" value="${c.shift}" step="0.1" oninput="channels[${idx}].shift=parseFloat(this.value); draw();"></div>
                     </div>
-                    <div class="input-group">
-                        <div class="label-row"><span>基准位置 (Y)</span></div>
-                        <input type="number" value="${s.yOffset}" oninput="updateSig(${s.id}, 'yOffset', this.value)">
+                    
+                    <div style="margin-top:15px; padding-top:15px; border-top:1px dashed var(--border);">
+                        <span class="label">分段控制 (Count: ${c.segments.length})</span>
+                        <input type="number" class="input-box" value="${c.segments.length}" min="1" onchange="setSegmentCount(${idx}, this.value)">
                     </div>
-                    <div class="input-group">
-                        <div class="label-row"><span>幅值 (格)</span></div>
-                        <input type="number" step="0.1" value="${s.amp}" oninput="updateSig(${s.id}, 'amp', this.value)">
-                    </div>
-                    <div class="input-group">
-                        <div class="label-row"><span>周期 (格)</span></div>
-                        <input type="number" step="0.5" value="${s.period}" oninput="updateSig(${s.id}, 'period', this.value)">
-                    </div>
-                    <div class="input-group">
-                        <div class="label-row"><span>波形相位 (°)</span></div>
-                        <input type="number" min="0" max="360" step="1" value="${s.phase}" oninput="updateSig(${s.id}, 'phase', this.value)">
-                    </div>
-                    <div class="input-group">
-                        <div class="label-row"><span>占空比 (%)</span></div>
-                        <input type="number" min="1" max="99" step="1" value="${s.duty}" oninput="updateSig(${s.id}, 'duty', this.value)">
-                    </div>
-                    <div class="input-group">
-                        <div class="label-row"><span>波形线宽 (px)</span></div>
-                        <input type="number" min="0.5" step="0.5" value="${s.stroke}" oninput="updateSig(${s.id}, 'stroke', this.value)">
-                    </div>
-                    <div class="input-group flex-row">
-                        <span>颜色</span>
-                        <input type="color" value="${s.color}" onchange="updateSig(${s.id}, 'color', this.value)">
-                    </div>
-                    <div style="text-align: right; margin-top: 10px;">
-                        <button class="btn-remove" onclick="removeSignal(${s.id})">移除通道</button>
-                    </div>
-                </div>
-            `;
-            list.appendChild(card);
+
+                    ${c.segments.map((s, si) => `
+                        <div class="seg-card">
+                            <span class="label">分段 ${si+1} 形状</span>
+                            <div class="grid grid-2">
+                                <div><span class="label">波形</span><select class="input-box" onchange="channels[${idx}].segments[${si}].type=this.value; draw();"><option value="square" ${s.type==='square'?'selected':''}>方波</option><option value="ramp" ${s.type==='ramp'?'selected':''}>三角波</option></select></div>
+                                <div><span class="label">周期 (T)</span><input type="number" class="input-box" value="${s.per}" oninput="channels[${idx}].segments[${si}].per=parseFloat(this.value); draw();"></div>
+                            </div>
+                            <div class="grid grid-3" style="margin-bottom:0;">
+                                <div><span class="label">基准Y</span><input type="number" class="input-box" value="${s.yOff}" oninput="channels[${idx}].segments[${si}].yOff=parseFloat(this.value); draw();"></div>
+                                <div><span class="label">幅值 (A)</span><input type="number" step="0.1" class="input-box" value="${s.amp}" oninput="channels[${idx}].segments[${si}].amp=parseFloat(this.value); draw();"></div>
+                                <div><span class="label">占空比%</span><input type="number" class="input-box" value="${s.duty}" oninput="channels[${idx}].segments[${si}].duty=parseFloat(this.value); draw();"></div>
+                            </div>
+                        </div>`).join('')}
+                    <button class="btn-del" onclick="channels.splice(${idx},1); render();">移除通道</button>
+                </div>`;
+            container.appendChild(m);
         });
         draw();
     }
 
     function draw() {
-        const W = 800, H = 600, margin = 40;
-        const GX = parseInt(document.getElementById('gridX').value) || 50;
-        const GY = parseInt(document.getElementById('gridY').value) || 50;
-        const GStroke = document.getElementById('gridStroke').value;
-        const GColor = document.getElementById('gridColor').value;
-        const GStyle = document.getElementById('gridStyle').value;
-        const showH = document.getElementById('showHGrid').checked;
-        const showV = document.getElementById('showVGrid').checked;
+        const W = 800, H = 600, Margin = 40;
+        const GX = parseFloat(document.getElementById('gX').value) || 60, GY = parseFloat(document.getElementById('gY').value) || 60;
+        const gCol = document.getElementById('gCol').value, gStr = document.getElementById('gStr').value, gDash = document.getElementById('gSty').value === 'dashed' ? '5,5' : '';
 
-        let svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="background:white;">`;
-        const dash = GStyle === "0" ? "" : `stroke-dasharray="${GStyle}"`;
+        let svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="background:#fff; border-radius:16px;">`;
+        if(document.getElementById('gridV').checked) for(let x=Margin; x<=W-Margin; x+=GX) svg += `<line x1="${x}" y1="${Margin}" x2="${x}" y2="${H-Margin}" stroke="${gCol}" stroke-width="${gStr}" stroke-dasharray="${gDash}" />`;
+        if(document.getElementById('gridH').checked) for(let y=Margin; y<=H-Margin; y+=GY) svg += `<line x1="${Margin}" y1="${y}" x2="${W-Margin}" y2="${y}" stroke="${gCol}" stroke-width="${gStr}" stroke-dasharray="${gDash}" />`;
 
-        if (showV) {
-            for(let x = margin; x <= W - margin; x += GX) {
-                svg += `<line x1="${x}" y1="${margin}" x2="${x}" y2="${H-margin}" stroke="${GColor}" stroke-width="${GStroke}" ${dash} />`;
-            }
-        }
-        if (showH) {
-            for(let y = margin; y <= H - margin; y += GY) {
-                svg += `<line x1="${margin}" y1="${y}" x2="${W-margin}" y2="${y}" stroke="${GColor}" stroke-width="${GStroke}" ${dash} />`;
-            }
-        }
-
-        signals.forEach(sig => {
-            const baseY = margin + sig.yOffset * GY;
-            const ampPx = sig.amp * GY;
-            const periodPx = sig.period * GX;
-            const phaseShift = (sig.phase / 360) * periodPx; 
-            const d = sig.duty / 100; // 占空比比例
-            
+        let totalSum = new Array(W).fill(0);
+        channels.forEach(c => {
+            const totalPer = c.segments.reduce((acc, s) => acc + s.per, 0);
+            const totalPx = (totalPer || 1) * GX;
             let pts = [];
-            for(let x = margin; x <= W - margin; x++) {
-                let t = ((x - margin + phaseShift) % periodPx) / periodPx;
-                if (t < 0) t += 1;
-
-                let y;
-                if (sig.type === 'square') {
-                    // 方波占空比控制
-                    y = (t < d) ? baseY - ampPx : baseY + ampPx;
-                } else {
-                    // 斜坡占空比控制（上升沿占比）
-                    if (t < d) {
-                        y = baseY + ampPx - (2 * ampPx * (t / d));
-                    } else {
-                        y = baseY - ampPx + (2 * ampPx * ((t - d) / (1 - d)));
+            for(let x = Margin; x <= W-Margin; x++) {
+                let relX = (x - Margin + (c.shift || 0) * GX) % totalPx;
+                if(relX < 0) relX += totalPx; 
+                let accum = 0, val = 0, segY = 0;
+                for(let s of c.segments) {
+                    let sPx = s.per * GX;
+                    if (relX < accum * GX + sPx) {
+                        let t = (relX - accum * GX) / (sPx || 1), d = (s.duty || 50)/100;
+                        val = (s.type==='square') ? (t<d?-1:1)*s.amp : (t<d?1-2*(t/(d||0.01)):-1+2*((t-d)/(1-d||0.01)))*s.amp;
+                        segY = s.yOff; break;
                     }
+                    accum += s.per;
                 }
-                pts.push(`${x},${y}`);
+                if (c.visible) pts.push(`${x},${Margin + segY * GY + val * GY}`);
+                if (sumSelection.includes(c.id)) totalSum[x] += val;
             }
-            svg += `<polyline points="${pts.join(' ')}" fill="none" stroke="${sig.color}" stroke-width="${sig.stroke}" stroke-linejoin="round" stroke-linecap="round" />`;
+            if (c.visible && pts.length > 0) svg += `<polyline points="${pts.join(' ')}" fill="none" stroke="${c.color}" stroke-width="${c.stroke}" stroke-linecap="round" stroke-linejoin="round" />`;
         });
 
-        svg += `</svg>`;
-        document.getElementById('svgContainer').innerHTML = svg;
+        if(document.getElementById('sumEnable').checked && sumSelection.length > 0) {
+            const sY = parseFloat(document.getElementById('sY').value), sCol = document.getElementById('sCol').value, sStr = document.getElementById('sStr').value;
+            let sPts = [];
+            for(let x = Margin; x <= W-Margin; x++) sPts.push(`${x},${Margin + sY * GY + totalSum[x] * GY}`);
+            svg += `<polyline points="${sPts.join(' ')}" fill="none" stroke="${sCol}" stroke-width="${sStr}" stroke-linecap="round" stroke-linejoin="round" />`;
+        }
+        document.getElementById('svgFrame').innerHTML = svg + `</svg>`;
     }
-
-    function downloadSVG() {
-        const content = document.getElementById('svgContainer').innerHTML;
-        const blob = new Blob([content], {type: 'image/svg+xml'});
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `signal_editor_${Date.now()}.svg`;
-        a.click();
-    }
-
     render();
 </script>
 </body>
